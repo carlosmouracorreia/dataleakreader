@@ -7,6 +7,7 @@ from flask import request
 from flask import jsonify
 from datetime import datetime
 
+
 app = Flask(__name__)
 
 @app.route('/send')
@@ -15,7 +16,12 @@ def send():
 
     n = 1
     pipe = r.pipeline()
-    file_path = os.path.join(os.path.dirname(__file__), 'test.txt')
+
+    dir_path = os.path.join(os.path.dirname(__file__), 'files')
+    files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+    file_path = os.path.join(os.path.dirname(__file__),'files', files[0])
+    leak_name = os.path.splitext(files[0])[0]
+
     with open(file_path) as f:
         stat = os.stat(file_path)
         str_time = datetime.fromtimestamp(stat.st_mtime)
@@ -26,7 +32,7 @@ def send():
             # super simple domain discovery - not checking for existing "@" in the email prefix 
             # (not sure how fast it is to regex things)!
             domain = line.split("@")[1] if "@" in line else line
-            dict_ = {"email": line}
+            dict_ = {"email": line, "leak": leak_name}
             dict_ = json.dumps(dict_)
             pipe.lpush('DOMAIN-' + domain, dict_)
             pipe.incr('EMAILNR')
