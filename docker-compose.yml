@@ -21,5 +21,26 @@ services:
       main:
         aliases:
           - redis
+  worker:
+    build: celery-scheduler
+    command: celery -A tasks worker -l info
+    volumes:
+      - ./data/:/home/docker/data/
+      - ./celery-scheduler/:/home/docker/celery/
+    networks:
+      main:
+        aliases:
+          - worker
+    depends_on:
+      - redis
+  celery-beat:
+    build: celery-scheduler
+    command: celery -A tasks beat -l info
+    depends_on:
+      - redis
+    networks:
+      main:
+        aliases:
+          - beat
 networks:
   main:
