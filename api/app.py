@@ -7,52 +7,32 @@ from flask import request
 from flask import jsonify
 from datetime import datetime
 
-
 app = Flask(__name__)
-
-@app.route('/send')
-def send():
-    r = redis.Redis(host='redis', port='6379', db=1)
-
-    n = 1
-    pipe = r.pipeline()
-
-    dir_path = os.path.join(os.path.dirname(__file__), 'files')
-    files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
-    file_path = os.path.join(os.path.dirname(__file__),'files', files[0])
-    leak_name = os.path.splitext(files[0])[0]
-
-    with open(file_path) as f:
-        stat = os.stat(file_path)
-        str_time = datetime.fromtimestamp(stat.st_mtime)
-        r.set('META-FILE-CHANGED', str(str_time))
-
-        for cnt, line in enumerate(f):
-            line = line.rstrip('\n')
-            # super simple domain discovery - not checking for existing "@" in the email prefix 
-            # (not sure how fast it is to regex things)!
-            domain = line.split("@")[1] if "@" in line else line
-            dict_ = {"email": line, "leak": leak_name}
-            dict_ = json.dumps(dict_)
-            pipe.lpush('DOMAIN-' + domain, dict_)
-            pipe.incr('EMAILNR')
-            n = n + 1
-            # do it in a batch fashion
-            if (n % 32) == 0:
-                pipe.execute()
-                pipe = r.pipeline()
-        
-        pipe.execute()
-    return str('Did it!')
 
 @app.route('/info')
 def info():
-    domain = request.args.get('domain')
+    type_ = request.args.get('type')
+    query = request.args.get('query')
+
+    if not query or not query.strip():
+        return jsonify({"error": "missing query parameter"}), 400
+
+    if type_ != "email" and type_ != "domain":
+        return jsonify({"error": "type query parameter as either email or domain"}), 400
 
     r = redis.Redis(host='redis',port='6379', db=1, decode_responses=True)
-    domain_data = r.lrange('DOMAIN-' + str(domain), 0,-1)
 
-    return jsonify({ 'total_email_nr': r.get('STAT-EMAIL-NR'), 'LINE-NR-TEST': r.get('META-FILE-LINES-NR_new'), 'emails': domain_data})
+    if type_ == "domain":
+        domain_data = r.lrange('DOMAIN-' + str(query), 0,-1)
+        # redis json-string list needs to be converted to json (deserialized) list in order to be unserialized
+        domain_data = [json.loads(ob) for ob in domain_data]
+        return jsonify({ 'total_email_nr': r.get('STAT-EMAIL-NR'), 'emails': domain_data})
+    
+    if type_ == "email":
+        email_data = r.lrange('EMAIL-' + str(query), 0,-1)
+        return jsonify({ 'total_email_nr': r.get('STAT-EMAIL-NR'), 'leaks': email_data})
+
+
 
 @app.route('/get')
 def get():
