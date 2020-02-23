@@ -1,0 +1,25 @@
+version: "3"
+services:
+  web:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+     - "5001:5001"
+    volumes:
+      - ./api/:/home/docker/api/
+    networks:
+      main:
+        aliases:
+          - web
+  redis:
+    image: redis
+    expose:
+      - "6379"
+    networks:
+      main:
+        aliases:
+          - redis
+networks:
+  main:
