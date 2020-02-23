@@ -20,7 +20,7 @@ def info():
     if type_ != "email" and type_ != "domain":
         return jsonify({"error": "type query parameter as either email or domain"}), 400
 
-    r = redis.Redis(host='redis',port='6379', db=1, decode_responses=True)
+    r = redis.Redis(host='redis_leaks',port='6379', db=1, decode_responses=True)
 
     if type_ == "domain":
         domain_data = r.lrange('DOMAIN-' + str(query), 0,-1)

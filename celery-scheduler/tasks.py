@@ -13,8 +13,8 @@ CONST_META_FILE_LINE_NR = 'META-FILE-LINES-NR_{leak_name}'
 CONST_META_FILE_RUNNING_TASK = 'META-FILE-TASK-RUNNING_{leak_name}'
 
 
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379'),
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379')
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis_celery:6379'),
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis_celery:6379')
 
 celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 celery.config_from_object(celeryconfig)
@@ -29,12 +29,9 @@ def test_me():
 @celery.task(name='tasks.test_me_final')
 def test_me_final(file_name):
 
-    print("=======================ENV VAR !!!! - " + os.getenv("BATCH_SIZE_WRITE"))
-
-
     file_path = os.path.join(os.path.dirname(__file__), '..' , 'data', file_name)
     leak_name = os.path.splitext(file_name)[0]
-    r = redis.Redis(host='redis', port='6379', db=1, decode_responses=True)
+    r = redis.Redis(host='redis_leaks', port='6379', db=1, decode_responses=True)
     # in case there's a task running already to write this data
     if r.get(CONST_META_FILE_RUNNING_TASK.format(leak_name=leak_name)) == 1:
        return

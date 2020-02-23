@@ -13,14 +13,22 @@ services:
       main:
         aliases:
           - web
-  redis:
+  redis_celery:
     image: redis
     expose:
       - "6379"
     networks:
       main:
         aliases:
-          - redis
+          - redis_celery
+  redis_leaks:
+    image: redis
+    expose:
+      - "6379"
+    networks:
+      main:
+        aliases:
+          - redis_leaks
   worker:
     environment:
       - BATCH_SIZE_WRITE=102400
@@ -33,12 +41,13 @@ services:
         aliases:
           - worker
     depends_on:
-      - redis
+      - redis_celery
+      - redis_leaks
   celery-beat:
     build: celery-scheduler
     command: celery -A tasks beat -l info
     depends_on:
-      - redis
+      - redis_celery
       - worker
     networks:
       main:
