@@ -41,6 +41,8 @@ def send():
             if (n % 32) == 0:
                 pipe.execute()
                 pipe = r.pipeline()
+        
+        pipe.execute()
     return str('Did it!')
 
 @app.route('/info')
@@ -50,7 +52,7 @@ def info():
     r = redis.Redis(host='redis',port='6379', db=1, decode_responses=True)
     domain_data = r.lrange('DOMAIN-' + str(domain), 0,-1)
 
-    return jsonify({ 'changed': r.get('META-FILE-CHANGED') , 'total_email_nr': r.get('EMAILNR'), 'domain_email_nr_pag': '0', 'emails': domain_data})
+    return jsonify({ 'total_email_nr': r.get('STAT-EMAIL-NR'), 'LINE-NR-TEST': r.get('META-FILE-LINES-NR_new'), 'emails': domain_data})
 
 @app.route('/get')
 def get():
