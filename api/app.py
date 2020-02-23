@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 @app.route('/send')
 def send():
-    r = redis.Redis(host='redis', port='6379', db=5)
+    r = redis.Redis(host='redis', port='6379', db=1)
 
     n = 1
     pipe = r.pipeline()
@@ -25,8 +25,10 @@ def send():
             line = line.rstrip('\n')
             # super simple domain discovery - not checking for existing "@" in the email prefix 
             # (not sure how fast it is to regex things)!
-            domain = line.split("@")[0] if "@" in line else line
-            pipe.lpush('DOMAIN-' + domain, {"email": line})
+            domain = line.split("@")[1] if "@" in line else line
+            dict_ = {"email": line}
+            dict_ = json.dumps(dict_)
+            pipe.lpush('DOMAIN-' + domain, dict_)
             pipe.incr('EMAILNR')
             n = n + 1
             # do it in a batch fashion
@@ -39,7 +41,7 @@ def send():
 def info():
     domain = request.args.get('domain')
 
-    r = redis.Redis(host='redis',port='6379', db=5, decode_responses=True)
+    r = redis.Redis(host='redis',port='6379', db=1, decode_responses=True)
     domain_data = r.lrange('DOMAIN-' + str(domain), 0,-1)
 
     return jsonify({ 'changed': r.get('META-FILE-CHANGED') , 'total_email_nr': r.get('EMAILNR'), 'domain_email_nr_pag': '0', 'emails': domain_data})
@@ -54,6 +56,6 @@ def get():
             continue
         dict__ = []
         for value in r.lrange(key,0,-1):
-            dict__.append(value)
+            dict__.append(json.loads(value))
         dict_.append({"domain": key, "data": dict__})
     return json.dumps(dict_)

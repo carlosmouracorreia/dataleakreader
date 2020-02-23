@@ -4,6 +4,7 @@ from celery import Celery
 import celeryconfig
 import redis
 from datetime import datetime
+import json
 
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379'),
@@ -22,18 +23,21 @@ def test_me():
     with open(file_path) as f:
         stat = os.stat(file_path)
         str_time = datetime.fromtimestamp(stat.st_mtime)
-        r.set('META-FILE-CHANGED', str_time)
+        r.set('META-FILE-CHANGED', str(str_time))
 
         for cnt, line in enumerate(f):
             line = line.rstrip('\n')
             # super simple domain discovery - not checking for existing "@" in the email prefix 
             # (not sure how fast it is to regex things)!
-            domain = line.split("@")[0] if "@" in line else line
-            pipe.lpush('DOMAIN-' + domain, {"email": line})
+            domain = line.split("@")[1] if "@" in line else line
+            dict_ = {"email": line}
+            dict_ = json.dumps(dict_)
+            pipe.lpush('DOMAIN-' + domain, dict_)
             pipe.incr('EMAILNR')
             n = n + 1
             # do it in a batch fashion
             if (n % 32) == 0:
                 pipe.execute()
                 pipe = r.pipeline()
-            print("DID IT!")
+
+    print("DID IT!")
