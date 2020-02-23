@@ -2,6 +2,10 @@
 ### Example user template template
 ### Example user template
 
+### Carlos's Entries
+data/
+
+
 # IntelliJ project files
 .idea
 *.iml

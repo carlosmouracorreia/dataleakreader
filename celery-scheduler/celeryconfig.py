@@ -13,6 +13,6 @@ CELERYBEAT_SCHEDULE = {
     'test-celery': {
         'task': 'tasks.test_me',
         # Every minute
-        'schedule': timedelta(seconds=15),
+        'schedule': timedelta(minutes=20),
     }
 }

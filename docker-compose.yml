@@ -22,11 +22,12 @@ services:
         aliases:
           - redis
   worker:
+    environment:
+      - BATCH_SIZE_WRITE=102400
     build: celery-scheduler
     command: celery -A tasks worker -l info
     volumes:
       - ./data/:/home/docker/data/
-      - ./celery-scheduler/:/home/docker/celery/
     networks:
       main:
         aliases:
@@ -38,6 +39,7 @@ services:
     command: celery -A tasks beat -l info
     depends_on:
       - redis
+      - worker
     networks:
       main:
         aliases:
