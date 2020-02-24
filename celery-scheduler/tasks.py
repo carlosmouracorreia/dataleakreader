@@ -68,7 +68,7 @@ def read_file(file_name):
             # super simple domain discovery - not checking for existing "@" in the email prefix 
             # (not sure how fast it is to regex things)!
             domain = line.split("@")[1] if "@" in line else line
-            dict_for_domain_key = {"address": line, "leak": leak_name}
+            dict_for_domain_key = {"email": line, "leak": leak_name}
             dict_for_domain_key = json.dumps(dict_for_domain_key)
             pipe.lpush('DOMAIN-' + domain, dict_for_domain_key)
 
