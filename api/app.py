@@ -35,7 +35,7 @@ def info():
     if type_ != CONST_QUERY_TYPE_BY_DOMAIN and type_ != CONST_QUERY_TYPE_BY_EMAIL:
         return jsonify({"error": f"type query parameter as either {CONST_QUERY_TYPE_BY_DOMAIN} or {CONST_QUERY_TYPE_BY_EMAIL}"}), 400
 
-    r = redis.Redis(host='redis_leaks',port='6379', db=1, decode_responses=True)
+    r = redis.Redis(host='redis_leaks',port='6379', decode_responses=True)
 
     if type_ == CONST_QUERY_TYPE_BY_DOMAIN:
         key = f'DOMAIN-{str(query)}'

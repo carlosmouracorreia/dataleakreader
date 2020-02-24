@@ -12,10 +12,9 @@ CONST_META_FILE_LINE_NR = 'META-FILE-LINES-NR_{leak_name}'
 CONST_META_FILE_RUNNING_TASK = 'META-FILE-TASK-RUNNING_{leak_name}'
 
 
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis_celery:6379'),
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis_celery:6379')
+CELERY_URL = 'redis://redis_celery:6379'
 
-celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+celery = Celery('tasks', broker=CELERY_URL, backend=CELERY_URL)
 celery.config_from_object(celeryconfig)
 
 @celery.task(name='tasks.launch')
@@ -30,7 +29,7 @@ def read_file(file_name):
 
     file_path = os.path.join(os.path.dirname(__file__), '..' , 'data', file_name)
     leak_name = os.path.splitext(file_name)[0]
-    r = redis.Redis(host='redis_leaks', port='6379', db=1, decode_responses=True)
+    r = redis.Redis(host='redis_leaks', port='6379', decode_responses=True)
     # in case there's a task running already to write this data
     if r.get(CONST_META_FILE_RUNNING_TASK.format(leak_name=leak_name)) == 1:
        return
@@ -45,7 +44,7 @@ def read_file(file_name):
     n_processed = 0
     pipe = r.pipeline()
 
-    with open(file_path) as f:
+    with open(file_path, encoding="utf8", errors="ignore") as f:
 
         # set running flag so that celery periodic task don't re-do efforts and duplicate data!!
         r.set(CONST_META_FILE_RUNNING_TASK.format(leak_name=leak_name), 1)

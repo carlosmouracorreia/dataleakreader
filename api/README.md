@@ -25,10 +25,46 @@ The **required query parameters** are:
 
 limit and offset are **optional** and allow to skip/limit records
 
-## Example Outputs
+## Example API Outputs
 
-Test
+* **emails_leaks_from_domain** - Lookup by domain
 
+```
+{
+  "emails_leaks_from_domain": [
+    {
+      "email": "blues@orangemail.sk",
+      "leak": "neopets"
+    }, 
+   ],
+  "pagination": {
+    "element_nr": 31,
+    "limit": 150,
+    "offset": 0
+  },
+  "total_email_nr": "11364001"
+}
+
+```
+
+* **leaks_from_email** - Lookup by email
+
+
+```
+{
+  "leaks_from_email": [
+    "linkedinsample",
+    "neopets"
+  ],
+  "pagination": {
+    "element_nr": 2,
+    "limit": 150,
+    "offset": 0
+  },
+  "total_email_nr": "11056801"
+}
+
+```
 
 ## Configurable Parameters
  In the .env file you can configure some application specific parameters before you rebuild the app with docker-compose up -d --build
@@ -37,6 +73,27 @@ Test
  * **WORKER_TRIGGER_SECOND_FREQUENCY** - the regularity to run the workers
  * **MAX_LIMIT_OUTPUT** - the max limit to be outputed on the results list
 
- ## Speed Considerations
 
-Test
+## Data Structure
+
+A simple key value data structure was used following Redis unstructured nature.
+Redis was used instead of a disk persistent storage in order to speed up lookups and writes (even faster than reads). A combo with an incremental indexed database for cleaned records (after parsing etc) could be a next iteration on this project.
+
+The keys used for this implementation are:
+
+* **DOMAIN-{domain-name}** - Contains a list of JSON strings (then de-serialized) with the following attributes: email and data_leak
+* **EMAIL-{email-address}** - Contains a list of strings with the respective data-leak
+* **META-FILE-CHANGED_{leak_name}** - The periodic worker only takes action on the i-th coming file from the data folder after the 1st dump if the file has been changed again
+* **META-FILE-LINES-NR_{leak_name}** - Goes in hand with the previous metadata - fast fowards to the last stored line from the last changed date and only starts dumping from there
+* **META-FILE-TASK-RUNNING_{leak_name}** - The worker was built in a naive way, spawning as much workers as the number of existing files per seconds fraction. This is a trick to not allow multiple workers to be working on the same file at the same time (usually files are big and take more time to process than the frequency-interval cronjobs) to avoid data duplication.  
+
+**DUPLICATION** was not strictly checked against yet as there might be some race conditions prone to happen this way. Also, the provided files can have duplicated entries and naively checking for existing entries would slow down the lookup/writes so no solution was implemented yet.
+
+## Speed Considerations
+
+1. Ignoring non-utf8 characters seems to speed up lookup queries a lot when dumper is importing data
+2. Using the aforementioned data structure while resulting in data duplicating it will speed up lookups
+3. Using a Redis Pipeline will cut Round Trip Times by doing less TCP calls to Redis Server
+4. Using an acceptable batch size (implemented by this app) for the pipeline means that the API can be looked up while data is being added (and not just on the end)
+5. Using limits for querying data speeds up the information retrieval
+6. Using a different Redis server (as a docker instance) for Celery Workers/Beat and another one for our data structure might cut down on server resources
