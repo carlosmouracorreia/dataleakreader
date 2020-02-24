@@ -89,6 +89,14 @@ The keys used for this implementation are:
 
 **DUPLICATION** was not strictly checked against yet as there might be some race conditions prone to happen this way. Also, the provided files can have duplicated entries and naively checking for existing entries would slow down the lookup/writes so no solution was implemented yet.
 
+## (Distributed) System Structure
+
+Docker was used for ease of development and deployment. There's a host-guest volume for incoming live data. There's 5 containers, 2 with different Redis instances and 3 others:
+* Flask WebServer with Gunicorn
+* Celery Worker Process
+* Celery Beat Process - Could have been wrapped in the worker VM as well IMO.
+
+
 ## Speed Considerations 
 
 Most of these are empirically thought through and not formally clock tested. Also, most of them are arguably order of relevance. The obvious one is that we're not persisting data to disk.
