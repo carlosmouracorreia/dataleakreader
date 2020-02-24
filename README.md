@@ -70,7 +70,7 @@ limit and offset are **optional** and allow to skip/limit records
  In the .env file you can configure some application specific parameters before you rebuild the app with docker-compose up -d --build
 
  * **BATCH_SIZE_WRITE** - the batch size to send to Redis at a time
- * **WORKER_TRIGGER_SECOND_FREQUENCY** - the regularity to run the workers
+ * **WORKER_TRIGGER_SECOND_FREQUENCY** - the periodicity to run the workers against
  * **MAX_LIMIT_OUTPUT** - the max limit to be outputed on the results list
 
 
@@ -85,15 +85,27 @@ The keys used for this implementation are:
 * **EMAIL-{email-address}** - Contains a list of strings with the respective data-leak
 * **META-FILE-CHANGED_{leak_name}** - The periodic worker only takes action on the i-th coming file from the data folder after the 1st dump if the file has been changed again
 * **META-FILE-LINES-NR_{leak_name}** - Goes in hand with the previous metadata - fast fowards to the last stored line from the last changed date and only starts dumping from there
-* **META-FILE-TASK-RUNNING_{leak_name}** - The worker was built in a naive way, spawning as much workers as the number of existing files per seconds fraction. This is a trick to not allow multiple workers to be working on the same file at the same time (usually files are big and take more time to process than the frequency-interval cronjobs) to avoid data duplication.  
+* **META-FILE-TASK-RUNNING_{leak_name}** - The worker was built in a naive way, spawning as many workers as the number of existing files per seconds fraction. This flag is a trick to not allow multiple workers to be working on the same file at the same time (usually files are big and take more time to process than the frequency-interval cronjobs) to avoid data duplication.  
 
 **DUPLICATION** was not strictly checked against yet as there might be some race conditions prone to happen this way. Also, the provided files can have duplicated entries and naively checking for existing entries would slow down the lookup/writes so no solution was implemented yet.
 
-## Speed Considerations
+## Speed Considerations 
 
-1. Ignoring non-utf8 characters seems to speed up lookup queries a lot when dumper is importing data
-2. Using the aforementioned data structure while resulting in data duplicating it will speed up lookups
-3. Using a Redis Pipeline will cut Round Trip Times by doing less TCP calls to Redis Server
-4. Using an acceptable batch size (implemented by this app) for the pipeline means that the API can be looked up while data is being added (and not just on the end)
+Most of these are empirically thought through and not formally clock tested. Also, most of them are arguably order of relevance. The obvious one is that we're not persisting data to disk.
+
+1. Using the aforementioned data structure while resulting in data duplicating it will speed up lookups
+2. Using a Redis Pipeline will cut Round Trip Times by doing less TCP calls to Redis Server
+3. Using an acceptable batch size (implemented by this app) for the pipeline means that the API can be looked up while data is being added (and not just on the end)
+4. Ignoring non-utf8 characters seems to speed up lookup queries a lot when dumper is importing data
 5. Using limits for querying data speeds up the information retrieval
-6. Using a different Redis server (as a docker instance) for Celery Workers/Beat and another one for our data structure might cut down on server resources
+6. Using a different Redis server (as a docker instance) for Celery Workers/Beat and another one for our data structure might cut down on server resource exaustion and thus speeding things.
+7. Gunicorn server spawned with 4 workers
+
+## Security Considerations
+
+This program was done as a trial for an information security company so at least a brief statement about securing data should be written even if it wasn't the main topic addressed for the task.
+
+1. Only endpoint was secured by sanitizing query types and integers on the input parameters (query parameters)
+2. Docker Network concept was used to provide different addresses for the different containers/machines running
+3. Database ports were exposed just between the (needed?) containers and the only port exposed to the outside (host-OS) was the server API one.
+4. Gunicorn server opposed/on-top of normal flask server instance will ensure HTTP requests are coherent for a normal-sized app out of the box (e.g by limiting Header Fields/payload)

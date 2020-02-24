@@ -18,12 +18,19 @@ CONST_QUERY_TYPE_BY_EMAIL = 'leaks_from_email'
 def give_nr(query_param, default=0, max_=False):
     '''
     Return a valid number for limit/offset query parameters in case they're fed by the user
+    
+    @param: default The default to be enforced
+    @param: max_ if the default parameter should also be the maximum allowed
     '''
     nr = int(query_param) if query_param and query_param.isdigit() else default
     return min(nr,default) if max_ else nr
 
 @app.route('/info')
 def info():
+    '''
+    Only endpoint to fetch email data from the in-mem Redis DB. Check README for parameter usage
+    '''
+    
     type_ = request.args.get('type')
     query = request.args.get('query')
     limit = give_nr(request.args.get('limit'), int(os.getenv("MAX_LIMIT_OUTPUT")), True)
