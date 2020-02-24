@@ -19,15 +19,15 @@ CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis_c
 celery = Celery('tasks', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 celery.config_from_object(celeryconfig)
 
-@celery.task(name='tasks.test_me')
-def test_me():
+@celery.task(name='tasks.launch')
+def launch():
 
     dir_path = os.path.join(os.path.dirname(__file__), '..' , 'data')
     files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
-    group(test_me_final.s(file_name) for file_name in files)()
+    group(read_file.s(file_name) for file_name in files)()
 
-@celery.task(name='tasks.test_me_final')
-def test_me_final(file_name):
+@celery.task(name='tasks.read_file')
+def read_file(file_name):
 
     file_path = os.path.join(os.path.dirname(__file__), '..' , 'data', file_name)
     leak_name = os.path.splitext(file_name)[0]
@@ -89,6 +89,3 @@ def test_me_final(file_name):
 
         # set running flag to 0 so celery periodic tasks can take over
         r.set(CONST_META_FILE_RUNNING_TASK.format(leak_name=leak_name), 0)
-
-
-    print("DID IT! - " + leak_name)

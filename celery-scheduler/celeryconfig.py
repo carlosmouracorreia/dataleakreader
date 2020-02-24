@@ -11,7 +11,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 CELERYBEAT_SCHEDULE = {
     'test-celery': {
-        'task': 'tasks.test_me',
+        'task': 'tasks.launch',
         # Every minute
         'schedule': timedelta(seconds=2),
     }

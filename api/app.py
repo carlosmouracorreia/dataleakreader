@@ -31,19 +31,3 @@ def info():
     if type_ == "email":
         email_data = r.lrange('EMAIL-' + str(query), 0,-1)
         return jsonify({ 'total_email_nr': r.get('STAT-EMAIL-NR'), 'leaks': email_data})
-
-
-
-@app.route('/get')
-def get():
-    r = redis.Redis(host='redis',port='6379', db=1, decode_responses=True)
-    dict_ = []
-
-    for key in r.keys():
-        if not "DOMAIN-" in key:
-            continue
-        dict__ = []
-        for value in r.lrange(key,0,-1):
-            dict__.append(json.loads(value))
-        dict_.append({"domain": key, "data": dict__})
-    return json.dumps(dict_)
