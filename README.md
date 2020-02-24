@@ -1,6 +1,6 @@
 # Data Leak Reader - Dumper + API
 
-Loads email bulk data from .txt files into memory-database redis to have fast lookups for email-domain-leak info (with a **Flask API**) and even faster writes for bulk email data with a **Celery Beat** powered worker.
+Loads email bulk data from .txt files into memory-database **Redis** to have fast lookups for email-domain-leak info (with a **Flask API**) and even faster writes for bulk email data with a **Celery Beat** powered worker.
 
 By having a folder with text files this software will incrementally save the records in the DB. Also, as new files come in or the existing text files get bigger (imagining they're being constantly fed from a stream to the disk) this app will further increment the respective leak data.
 
@@ -67,7 +67,7 @@ limit and offset are **optional** and allow to skip/limit records
 ```
 
 ## Configurable Parameters
- In the .env file you can configure some application specific parameters before you rebuild the app with docker-compose up -d --build
+ In the **.env** root level file you can configure some application specific parameters before you rebuild the app with docker-compose up -d --build
 
  * **BATCH_SIZE_WRITE** - the batch size to send to Redis at a time
  * **WORKER_TRIGGER_SECOND_FREQUENCY** - the periodicity to run the workers against
@@ -108,4 +108,5 @@ This program was done as a trial for an information security company so at least
 1. Only endpoint was secured by sanitizing query types and integers on the input parameters (query parameters)
 2. Docker Network concept was used to provide different addresses for the different containers/machines running
 3. Database ports were exposed just between the (needed?) containers and the only port exposed to the outside (host-OS) was the server API one.
-4. Gunicorn server opposed/on-top of normal flask server instance will ensure HTTP requests are coherent for a normal-sized app out of the box (e.g by limiting Header Fields/payload)
+4. Because all the communication was done within Docker VMs Redis password authentication was not used at this point
+5. Gunicorn server opposed/on-top of normal flask server instance will ensure HTTP requests are coherent for a normal-sized app out of the box (e.g by limiting Header Fields/payload)
