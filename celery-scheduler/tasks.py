@@ -7,7 +7,6 @@ from datetime import datetime
 import json
 from celery import group
 
-
 CONST_META_FILE_CHANGED = 'META-FILE-CHANGED_{leak_name}'
 CONST_META_FILE_LINE_NR = 'META-FILE-LINES-NR_{leak_name}'
 CONST_META_FILE_RUNNING_TASK = 'META-FILE-TASK-RUNNING_{leak_name}'

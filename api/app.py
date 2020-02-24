@@ -6,6 +6,8 @@ import os
 from flask import request
 from flask import jsonify
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -24,7 +26,7 @@ def give_nr(query_param, default=0, max_=False):
 def info():
     type_ = request.args.get('type')
     query = request.args.get('query')
-    limit = give_nr(request.args.get('limit'),100, True)
+    limit = give_nr(request.args.get('limit'), int(os.getenv("MAX_LIMIT_OUTPUT")), True)
     offset = give_nr(request.args.get('offset'),0)
 
     if not query or not query.strip():

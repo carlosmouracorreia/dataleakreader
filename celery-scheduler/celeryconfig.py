@@ -1,4 +1,7 @@
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 #CELERY_IMPORTS = ('app.tasks.test')
@@ -13,6 +16,6 @@ CELERYBEAT_SCHEDULE = {
     'test-celery': {
         'task': 'tasks.launch',
         # Every minute
-        'schedule': timedelta(seconds=2),
+        'schedule': timedelta(seconds=int(os.getenv("WORKER_TRIGGER_SECOND_FREQUENCY"))),
     }
 }

@@ -1,18 +1,42 @@
 version: "3"
 services:
   web:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
+    build: 
+      context: ./
+      dockerfile: api/Dockerfile
     restart: always
     ports:
      - "5001:5001"
-    volumes:
-      - ./api/:/home/docker/api/
     networks:
       main:
         aliases:
           - web
+  worker:
+    build: 
+      context: ./
+      dockerfile: celery-scheduler/Dockerfile
+    command: celery -A tasks worker -l info
+    volumes:
+      - ./data/:/home/docker/data/
+    networks:
+      main:
+        aliases:
+          - worker
+    depends_on:
+      - redis_celery
+      - redis_leaks
+  celery-beat:
+    build: 
+      context: ./
+      dockerfile: celery-scheduler/Dockerfile
+    command: celery -A tasks beat -l info
+    depends_on:
+      - redis_celery
+      - worker
+    networks:
+      main:
+        aliases:
+          - beat
   redis_celery:
     image: redis
     expose:
@@ -29,29 +53,5 @@ services:
       main:
         aliases:
           - redis_leaks
-  worker:
-    environment:
-      - BATCH_SIZE_WRITE=102400
-    build: celery-scheduler
-    command: celery -A tasks worker -l info
-    volumes:
-      - ./data/:/home/docker/data/
-    networks:
-      main:
-        aliases:
-          - worker
-    depends_on:
-      - redis_celery
-      - redis_leaks
-  celery-beat:
-    build: celery-scheduler
-    command: celery -A tasks beat -l info
-    depends_on:
-      - redis_celery
-      - worker
-    networks:
-      main:
-        aliases:
-          - beat
 networks:
   main:
